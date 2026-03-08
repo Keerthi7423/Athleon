@@ -3,6 +3,8 @@ const { connectRedis, disconnectRedis } = require('./utils/redis');
 const { getPlayerStats, getMatchResults } = require('./services/analyticsService');
 const { emitScoreUpdate, emitFatigueAlert, emitMomentumShift } = require('./services/eventEmitters');
 const { initSocketServer } = require('./utils/socketUtils');
+const fatigueRoutes = require('./routes/fatigue.routes');
+const emiRoutes = require('./routes/emi.routes');
 const config = require('./config/env');
 const http = require('http');
 
@@ -12,6 +14,10 @@ const server = http.createServer(app);
 // 1. Initialize Socket.io Server
 initSocketServer(server);
 app.use(express.json());
+
+// Main Fatigue Microservice Routes
+app.use('/fatigue', fatigueRoutes);
+app.use('/emi', emiRoutes);
 
 // Routes using Redis Cache inside Services
 app.get('/api/v1/analytics/players/:id/stats', async (req, res) => {
