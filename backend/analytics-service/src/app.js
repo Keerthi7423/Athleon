@@ -5,6 +5,7 @@ const { emitScoreUpdate, emitFatigueAlert, emitMomentumShift } = require('./serv
 const { initSocketServer } = require('./utils/socketUtils');
 const fatigueRoutes = require('./routes/fatigue.routes');
 const emiRoutes = require('./routes/emi.routes');
+const aggregatedAnalyticsRoutes = require('./routes/analytics.routes');
 const config = require('./config/env');
 const http = require('http');
 
@@ -15,9 +16,10 @@ const server = http.createServer(app);
 initSocketServer(server);
 app.use(express.json());
 
-// Main Fatigue Microservice Routes
+// Main Microservice Routes
 app.use('/fatigue', fatigueRoutes);
 app.use('/emi', emiRoutes);
+app.use('/analytics', aggregatedAnalyticsRoutes);
 
 // Routes using Redis Cache inside Services
 app.get('/api/v1/analytics/players/:id/stats', async (req, res) => {
