@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 module.exports = {
-  port: process.env.PORT || 4000,
+  port: process.env.PORT || 4002,
   redis: {
     url: process.env.REDIS_URL || 'redis://localhost:6379',
     // 4. TTL Configuration (in seconds)

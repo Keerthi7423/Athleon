@@ -34,6 +34,7 @@ app.use(jwtAuth);
 app.use(services.auth.route, createServiceProxy(services.auth.target, "auth"));
 app.use(services.fatigue.route, createServiceProxy(services.fatigue.target, "fatigue"));
 app.use(services.emi.route, createServiceProxy(services.emi.target, "emi"));
+app.use(services.analytics.route, createServiceProxy(services.analytics.target, "analytics"));
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -1,0 +1,29 @@
+# --- Athleon Node.js Service Dockerfile Template ---
+# This template provides a standardized environment for all Athleon microservices.
+
+# Stage 1: Build & Run
+FROM node:20-alpine
+
+# Set the working directory
+WORKDIR /usr/src/app
+
+# Copy dependency manifests
+# Copying these separately allows for better caching of the node_modules layer
+COPY package*.json ./
+
+# Install dependencies
+# Using --production ensures we don't include devDependencies in the final image
+RUN npm install --production && npm cache clean --force
+
+# Copy application source
+COPY . .
+
+# Expose the default service port (standardized across services via ENV)
+# Individual services will override this via the EXPOSE instruction
+EXPOSE ${PORT:-3000}
+
+# Global Environment Variables
+ENV NODE_ENV=production
+
+# Start the application using the start script defined in package.json
+CMD ["npm", "start"]

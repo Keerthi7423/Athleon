@@ -17,7 +17,7 @@ initSocketServer(server);
 app.use(express.json());
 
 // Main Microservice Routes
-app.use('/analytics', aggregatedAnalyticsRoutes);
+app.use('/emi', emiRoutes);
 
 // Routes using Redis Cache inside Services
 app.get('/api/v1/analytics/players/:id/stats', async (req, res) => {
