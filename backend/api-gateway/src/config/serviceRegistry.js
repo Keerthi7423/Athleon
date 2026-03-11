@@ -25,6 +25,10 @@ const services = {
   emi: {
     route: "/emi",
     target: getServiceUrl("EMI_SERVICE_URL", "http://localhost:4003")
+  },
+  analytics: {
+    route: "/analytics",
+    target: getServiceUrl("ANALYTICS_SERVICE_URL", "http://localhost:4000")
   }
 };
 

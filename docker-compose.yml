@@ -1,0 +1,144 @@
+services:
+  # --- Infrastructure ---
+  db:
+    image: postgres:15-alpine
+    container_name: athleon-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: athleon
+    ports:
+      - "5433:5432"
+    networks:
+      - athleon-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d athleon" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis:
+    image: redis:7-alpine
+    container_name: athleon-redis
+    ports:
+      - "6380:6379"
+    networks:
+      - athleon-net
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- Microservices ---
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+    container_name: api-gateway
+    ports:
+      - "8081:8080"
+    environment:
+      - PORT=8080
+      - AUTH_SERVICE_URL=http://auth-service:4001
+      - FATIGUE_SERVICE_URL=http://fatigue-service:4002
+      - EMI_SERVICE_URL=http://emi-service:4003
+      - ANALYTICS_SERVICE_URL=http://analytics-api:4000
+      - JWT_SECRET=athleon_super_secret_key_2026
+    depends_on:
+      auth-service:
+        condition: service_healthy
+    networks:
+      - athleon-net
+
+  auth-service:
+    build:
+      context: ./backend/auth-service
+    container_name: auth-service
+    environment:
+      - PORT=4001
+      - DATABASE_URL=postgres://postgres:password@db:5432/athleon
+      - DB_SSL=false
+      - JWT_SECRET=athleon_super_secret_key_2026
+      - JWT_EXPIRES_IN=1d
+      - BCRYPT_SALT_ROUNDS=12
+      - ALLOWED_ORIGIN=*
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:4001/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - athleon-net
+
+  fatigue-service:
+    build:
+      context: ./backend/fatigue-service
+    container_name: fatigue-service
+    environment:
+      - PORT=4002
+      - DB_USER=postgres
+      - DB_HOST=db
+      - DB_NAME=athleon
+      - DB_PASSWORD=password
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - athleon-net
+
+  emi-service:
+    build:
+      context: ./backend/emi-service
+    container_name: emi-service
+    environment:
+      - PORT=4003
+      - DB_USER=postgres
+      - DB_HOST=db
+      - DB_NAME=athleon
+      - DB_PASSWORD=password
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - athleon-net
+
+  analytics-api:
+    build:
+      context: ./backend/analytics-service
+    container_name: analytics-api
+    environment:
+      - PORT=4000
+      - DB_USER=postgres
+      - DB_HOST=db
+      - DB_NAME=athleon
+      - DB_PASSWORD=password
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - athleon-net
+
+networks:
+  athleon-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
